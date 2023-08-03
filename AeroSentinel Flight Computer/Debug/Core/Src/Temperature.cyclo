@@ -1,0 +1,2 @@
+../Core/Src/Temperature.c:19:6:UART_Transmit_Messages_Temperature	1
+../Core/Src/Temperature.c:25:17:Transmit_Temperature	4

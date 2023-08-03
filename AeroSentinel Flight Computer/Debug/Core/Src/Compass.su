@@ -1,0 +1,8 @@
+../Core/Src/Compass.c:32:6:UART_Transmit_Messages_Magnetometer	16	static
+../Core/Src/Compass.c:40:10:QMC_init	40	static
+../Core/Src/Compass.c:60:9:QMC_read	24	static
+../Core/Src/Compass.c:90:9:QMC_read_Normalize	24	static
+../Core/Src/Compass.c:139:7:QMC_readHeading	32	static
+../Core/Src/Compass.c:145:9:QMC_Standby	32	static
+../Core/Src/Compass.c:151:9:QMC_Reset	32	static
+../Core/Src/Compass.c:161:13:Transmit_Compass_Data	32	static

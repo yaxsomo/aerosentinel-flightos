@@ -1,0 +1,9 @@
+../Core/Src/Control_Center.c:18:6:UART_Transmit_String	16	static
+../Core/Src/Control_Center.c:24:6:printIntroTitle	8	static
+../Core/Src/Control_Center.c:39:6:printOptions	8	static
+../Core/Src/Control_Center.c:53:9:initialization_procedure	328	static
+../Core/Src/Control_Center.c:93:6:sensors_readings	376	static
+../Core/Src/Control_Center.c:137:6:handleUserCommand	88	static
+../Core/Src/Control_Center.c:225:10:getNumberOfIterations	32	static
+../Core/Src/Control_Center.c:251:6:initialize_lora	4	static
+../Core/Src/Control_Center.c:285:6:scanI2CDevices	112	static

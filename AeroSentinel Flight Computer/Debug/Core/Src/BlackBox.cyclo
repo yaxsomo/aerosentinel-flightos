@@ -1,0 +1,10 @@
+../Core/Src/BlackBox.c:28:6:UART_Transmit_Messages_BlackBox	1
+../Core/Src/BlackBox.c:35:6:file_exists	3
+../Core/Src/BlackBox.c:43:5:buf_size	2
+../Core/Src/BlackBox.c:50:6:buf_clear	2
+../Core/Src/BlackBox.c:57:6:mount_sd_card	2
+../Core/Src/BlackBox.c:67:6:check_free_space	1
+../Core/Src/BlackBox.c:87:6:create_file	2
+../Core/Src/BlackBox.c:99:6:append_data_to_file	6
+../Core/Src/BlackBox.c:138:6:read_file	2
+../Core/Src/BlackBox.c:164:6:unmount_sd_card	2

@@ -1,0 +1,6 @@
+../Core/Src/LoRa.c:62:6:e22_lora_init	1
+../Core/Src/LoRa.c:97:6:e22_lora_transnit	1
+../Core/Src/LoRa.c:121:6:e22_lora_receive	1
+../Core/Src/LoRa.c:132:6:e22_lora_manager	4
+../Core/Src/LoRa.c:163:6:e22_lora_make_ready	1
+../Core/Src/LoRa.c:171:6:e22_lora_reception_complete	1

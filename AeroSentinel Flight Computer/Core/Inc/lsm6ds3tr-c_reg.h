@@ -1722,6 +1722,7 @@ int32_t lsm6ds3tr_c_write_reg(stmdev_ctx_t *ctx, uint8_t reg,
                               uint16_t len);
 
 float_t lsm6ds3tr_c_from_fs2g_to_mg(int16_t lsb);
+float_t lsm6ds3tr_c_from_fs2g_to_mps2(int16_t lsb);
 float_t lsm6ds3tr_c_from_fs4g_to_mg(int16_t lsb);
 float_t lsm6ds3tr_c_from_fs8g_to_mg(int16_t lsb);
 float_t lsm6ds3tr_c_from_fs16g_to_mg(int16_t lsb);

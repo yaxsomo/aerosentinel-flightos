@@ -45,6 +45,10 @@ typedef struct QMC
 
 typedef struct {
     float heading;
+    double magDecRad;
+    double mag_unit_x;
+    double mag_unit_y;
+    double mag_unit_z;
     const char* direction;
 } CompassData;
 

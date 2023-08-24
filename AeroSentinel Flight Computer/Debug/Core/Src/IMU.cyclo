@@ -1,8 +1,5 @@
-../Core/Src/IMU.c:37:6:UART_Transmit_Messages_IMU	1
-../Core/Src/IMU.c:43:9:platform_read	2
-../Core/Src/IMU.c:54:9:platform_write	2
-../Core/Src/IMU.c:66:9:IMU_Initialization	3
-../Core/Src/IMU.c:137:9:IMU_Data_Read	1
-../Core/Src/IMU.c:160:9:IMU_Data_Read_Calibrated	1
-../Core/Src/IMU.c:190:6:Calibrate_IMU	2
-../Core/Src/IMU.c:218:9:Transmit_IMU_Data	2
+../Core/Src/IMU.c:54:6:UART_Transmit_Messages_IMU	1
+../Core/Src/IMU.c:60:9:platform_read	2
+../Core/Src/IMU.c:69:9:platform_write	2
+../Core/Src/IMU.c:79:9:IMU_Initialization	3
+../Core/Src/IMU.c:174:9:IMU_Data_Read	2

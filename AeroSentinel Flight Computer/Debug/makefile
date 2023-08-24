@@ -64,8 +64,8 @@ all: main-build
 main-build: AeroSentinel\ Flight\ Computer.elf secondary-outputs
 
 # Tool invocations
-AeroSentinel\ Flight\ Computer.elf AeroSentinel\ Flight\ Computer.map: $(OBJS) $(USER_OBJS) /Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/AeroSentinel\ Flight\ Computer/STM32F405RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "AeroSentinel Flight Computer.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/AeroSentinel Flight Computer/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="AeroSentinel Flight Computer.map" -Wl,--gc-sections -static -L"/Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/AeroSentinel Flight Computer/Drivers/CMSIS/DSP/Lib" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+AeroSentinel\ Flight\ Computer.elf AeroSentinel\ Flight\ Computer.map: $(OBJS) $(USER_OBJS) /Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/aerosentinel-flightos/AeroSentinel\ Flight\ Computer/STM32F405RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "AeroSentinel Flight Computer.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/aerosentinel-flightos/AeroSentinel Flight Computer/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="AeroSentinel Flight Computer.map" -Wl,--gc-sections -static -L"/Users/yaxsomo/STM32CubeIDE/workspace_1.12.1/aerosentinel-flightos/AeroSentinel Flight Computer/Drivers/CMSIS/DSP/Lib" -L../Middlewares/ST/STM32_MotionFX_Library/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -8,6 +8,8 @@
 #include "IMU.h"
 #include <string.h>
 #include <stdio.h>
+#include "RCFilter.h"
+#include "motion_fx.h"
 
 
 
@@ -23,10 +25,7 @@
 /* Private variables ---------------------------------------------------------*/
 static int16_t data_raw_acceleration[3];
 static int16_t data_raw_angular_rate[3];
-static float acceleration_mg[3];
-static float angular_rate_mdps[3];
-int32_t gyro_offset[3] = {0}; // Gyroscope offset for X, Y, Z axes
-int32_t acc_offset[3] = {0};  // Accelerometer offset for X, Y, Z axes
+
 static uint8_t whoamI, rst;
 stmdev_ctx_t device;
 extern I2C_HandleTypeDef hi2c1;
@@ -34,36 +33,51 @@ extern UART_HandleTypeDef huart1;
 IMUData imu_data;
 
 
+#define STATE_SIZE                      (size_t)(2432)
+#define GBIAS_ACC_TH_SC                 (2.0f*0.000765f)
+#define GBIAS_GYRO_TH_SC                (2.0f*0.002f)
+#define DECIMATION                      1U
+#define FROM_MG_TO_G  0.001f
+#define FROM_G_TO_MG  1000.0f
+#define FROM_MDPS_TO_DPS  0.001f
+#define FROM_DPS_TO_MDPS  1000.0f
+
+static MFX_knobs_t iKnobs;
+static MFX_knobs_t *ipKnobs = &iKnobs;
+static uint8_t mfxstate[STATE_SIZE];
+
+
+
+
+
+// TRASMIT MESSAGES VIA UART FUNCTION
 void UART_Transmit_Messages_IMU(const char* str)
 {
   HAL_UART_Transmit(&huart1, (uint8_t*)str, strlen(str), HAL_MAX_DELAY);
 }
 
-// Define the read function
+// SENSOR READING FUNCTION DEFINITION
 int32_t platform_read(I2C_HandleTypeDef *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
-
   // Perform the I2C read operation using HAL_I2C_Mem_Read
   HAL_StatusTypeDef status = HAL_I2C_Mem_Read(handle, LSM6DS3TRC_ADDRESS, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 100);
-
   // Return the appropriate value based on the HAL status
   return (status == HAL_OK) ? 0 : -1;
 }
 
-// Define the write function
+// SENSOR WRITING FUNCTION DEFINITION
 int32_t platform_write(I2C_HandleTypeDef *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
-
   // Perform the I2C write operation using HAL_I2C_Mem_Write
   HAL_StatusTypeDef status = HAL_I2C_Mem_Write(handle, LSM6DS3TRC_ADDRESS, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 100);
-
   // Return the appropriate value based on the HAL status
   return (status == HAL_OK) ? 0 : -1;
 }
 
 
-
+// IMU INITIALIZATION FUNCTION
 int32_t IMU_Initialization(){
+
 
 	/* Initialize MEMS driver interface */
 	device.write_reg = platform_write;
@@ -87,155 +101,129 @@ int32_t IMU_Initialization(){
     lsm6ds3tr_c_reset_get(&device, &rst);
 	} while (rst);
 
-	int32_t int_set,xl_pm,xl_fs,xl_dr,xl_lp1,gy_pm,gy_fs,gy_dr,bdu,state;
+	int32_t int_set,xl_fs,xl_dr,gy_fs,gy_dr,bdu,xl_fas,xl_lp,gy_bps,state;
+	//int32_t dev_round_status,dev_round_mode;
 
 	//Enabling I2C Communication
 	int_set = lsm6ds3tr_c_i2c_interface_set(&device,LSM6DS3TR_C_I2C_ENABLE);
 
-
-	//POWER-MODES
-
-	//Accelerometer
-	xl_pm = lsm6ds3tr_c_xl_power_mode_set(&device,LSM6DS3TR_C_XL_HIGH_PERFORMANCE);
-	//Gyroscope
-	gy_pm = lsm6ds3tr_c_gy_power_mode_set(&device,LSM6DS3TR_C_GY_HIGH_PERFORMANCE);
-
-	//ACCELEROMETER
-
-	//Setting Full-scale
-	xl_fs = lsm6ds3tr_c_xl_full_scale_set(&device,LSM6DS3TR_C_2g);
-	//Setting data rate
-	xl_dr = lsm6ds3tr_c_xl_data_rate_set(&device,LSM6DS3TR_C_XL_ODR_833Hz);
-	//Low-pass filter selection
-	xl_lp1 = lsm6ds3tr_c_xl_lp1_bandwidth_set(&device,LSM6DS3TR_C_XL_LP1_ODR_DIV_2);
+	  /* Enable Block Data Update */
+	  bdu = lsm6ds3tr_c_block_data_update_set(&device, PROPERTY_ENABLE);
+	  /* Set Output Data Rate */
+	  xl_dr= lsm6ds3tr_c_xl_data_rate_set(&device, LSM6DS3TR_C_XL_ODR_104Hz);
+	  gy_dr= lsm6ds3tr_c_gy_data_rate_set(&device, LSM6DS3TR_C_XL_ODR_104Hz);
+	  /* Set full scale */
+	  xl_fs= lsm6ds3tr_c_xl_full_scale_set(&device, LSM6DS3TR_C_2g);
+	  gy_fs= lsm6ds3tr_c_gy_full_scale_set(&device, LSM6DS3TR_C_500dps);
 
 
+	  /* Configure filtering chain(No aux interface) */
+	  /* Accelerometer - analog filter */
+	  xl_fas= lsm6ds3tr_c_xl_filter_analog_set(&device,
+	                                   LSM6DS3TR_C_XL_ANA_BW_400Hz);
+	  /* Accelerometer - LPF1 path ( LPF2 not used )*/
+	  //xl_lp = lsm6ds3tr_c_xl_lp1_bandwidth_set(&device, LSM6DS3TR_C_XL_LP1_ODR_DIV_4);
+	  /* Accelerometer - LPF1 + LPF2 path */
+	  xl_lp= lsm6ds3tr_c_xl_lp2_bandwidth_set(&device,LSM6DS3TR_C_XL_LOW_NOISE_LP_ODR_DIV_100);
+	  /* Accelerometer - High Pass / Slope path */
+	  //lsm6ds3tr_c_xl_reference_mode_set(&device, PROPERTY_DISABLE);
+	  //lsm6ds3tr_c_xl_hp_bandwidth_set(&device, LSM6DS3TR_C_XL_HP_ODR_DIV_100);
+	  /* Gyroscope - filtering chain */
+	  gy_bps= lsm6ds3tr_c_gy_band_pass_set(&device,
+	                               LSM6DS3TR_C_HP_260mHz_LP1_STRONG);
 
-	//GYROSCOPE
+	  //dev_round_status = lsm6ds3tr_c_rounding_on_status_set(&device,PROPERTY_ENABLE);
+	  //dev_round_mode= lsm6ds3tr_c_rounding_mode_set(&device,LSM6DS3TR_C_ROUND_GY_XL);
 
 
-	//Setting Full-scale
-	gy_fs = lsm6ds3tr_c_gy_full_scale_set(&device,LSM6DS3TR_C_125dps);
-	//Setting data scale
-	gy_dr = lsm6ds3tr_c_gy_data_rate_set(&device,LSM6DS3TR_C_GY_ODR_833Hz);
+		state = int_set + xl_fs + xl_dr + gy_fs + gy_dr + bdu + xl_fas + xl_lp + gy_bps;
+
+		//UART_Transmit_Messages_IMU("Configuration successful. \r\n");
 
 
+		  MotionFX_initialize((MFXState_t *)mfxstate);
 
-	//BDU Setting
-	bdu = lsm6ds3tr_c_block_data_update_set(&device,1); // O -> Disable | 1 -> ENABLE
+		  MotionFX_getKnobs(mfxstate, ipKnobs);
 
-	state = int_set + xl_pm + xl_fs + xl_dr + xl_lp1 + gy_pm + gy_fs + gy_dr + bdu;
+		  ipKnobs->acc_orientation[0] = 'n';
+		  ipKnobs->acc_orientation[1] = 'w';
+		  ipKnobs->acc_orientation[2] = 'u';
+		  ipKnobs->gyro_orientation[0] = 'n';
+		  ipKnobs->gyro_orientation[1] = 'w';
+		  ipKnobs->gyro_orientation[2] = 'u';
 
-	//UART_Transmit_Messages_IMU("Configuration successful. \r\n");
+		  ipKnobs->gbias_acc_th_sc = GBIAS_ACC_TH_SC;
+		  ipKnobs->gbias_gyro_th_sc = GBIAS_GYRO_TH_SC;
 
-	return state;
+		  ipKnobs->output_type = MFX_ENGINE_OUTPUT_ENU;
+		  ipKnobs->LMode = 1;
+		  ipKnobs->modx = DECIMATION;
+
+		  MotionFX_setKnobs(mfxstate, ipKnobs);
+		  MotionFX_enable_6X(mfxstate, MFX_ENGINE_ENABLE);
+		  MotionFX_enable_9X(mfxstate, MFX_ENGINE_DISABLE);
+
+
+		return state;
 
 
 }
 
 
-int32_t IMU_Data_Read(){
+//IMU DATA READING FUNCTION
+IMUData IMU_Data_Read(){
 
 	int32_t reading_state, gyro_reading, acc_reading;
+    MFX_input_t data_in;
+    MFX_output_t data_out;
+    float delta_time = TIME_ODR_104Hz;
+	//char test[100];
 
-	// Divide by 1000 to transofm millig (mg) in g and millidegrees per second (mdps) in degrees per second (dps)
+
+	//ACCELEROMETER RAW DATA READING
+	acc_reading = lsm6ds3tr_c_acceleration_raw_get(&device,data_raw_acceleration);
 	//GYROSCOPE
 	gyro_reading = lsm6ds3tr_c_angular_rate_raw_get(&device,data_raw_angular_rate);
-	angular_rate_mdps[0] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[0]) /1000.0;
-	angular_rate_mdps[1] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[1]) /1000.0;
-	angular_rate_mdps[2] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[2]) /1000.0;
-
-	//ACCELEROMETER
-	acc_reading = lsm6ds3tr_c_acceleration_raw_get(&device,data_raw_acceleration);
-	acceleration_mg[0] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[0]) /1000.0;
-	acceleration_mg[1] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[1]) /1000.0;
-	acceleration_mg[2] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[2]) /1000.0;
-
-	reading_state = gyro_reading + acc_reading; // If 0 -> Success | Otherwise error code
-
-	return reading_state;
-
-}
-
-int32_t IMU_Data_Read_Calibrated() {
-    // IMU_Data_Read function should have been called previously to update angular_rate_mdps and acceleration_mg
-
-	int32_t reading_state, gyro_reading, acc_reading;
-
-	// Divide by 1000 to transofm millig (mg) in g and millidegrees per second (mdps) in degrees per second (dps)
-	//GYROSCOPE
-	gyro_reading = lsm6ds3tr_c_angular_rate_raw_get(&device,data_raw_angular_rate);
-	angular_rate_mdps[0] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[0]) /1000.0;
-	angular_rate_mdps[1] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[1]) /1000.0;
-	angular_rate_mdps[2] = lsm6ds3tr_c_from_fs125dps_to_mdps(data_raw_angular_rate[2]) /1000.0;
-
-	//ACCELEROMETER
-	acc_reading = lsm6ds3tr_c_acceleration_raw_get(&device,data_raw_acceleration);
-	acceleration_mg[0] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[0]) /1000.0;
-	acceleration_mg[1] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[1]) /1000.0;
-	acceleration_mg[2] = lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[2]) /1000.0;
-
-
-    // Apply calibration offsets to the raw data
-    angular_rate_mdps[0] -= gyro_offset[0];
-    angular_rate_mdps[1] -= gyro_offset[1];
-    angular_rate_mdps[2] -= gyro_offset[2];
 
 
 	reading_state = gyro_reading + acc_reading; // If 0 -> Success | Otherwise error code
 
-	return reading_state;
-}
-
-void Calibrate_IMU() {
-
-	UART_Transmit_Messages_IMU("IMU Calibration process started...");
 
 
-    // Collect samples for gyroscope calibration
-    for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-        IMU_Data_Read(); // Read raw data from IMU
-        gyro_offset[0] += angular_rate_mdps[0];
-        gyro_offset[1] += angular_rate_mdps[1];
-        gyro_offset[2] += angular_rate_mdps[2];
-        HAL_Delay(2); // Delay between samples
-    }
+	  if (reading_state == 0){
 
-    // Calculate average offset for gyroscope
-    gyro_offset[0] /= CALIBRATION_SAMPLES;
-    gyro_offset[1] /= CALIBRATION_SAMPLES;
-    gyro_offset[2] /= CALIBRATION_SAMPLES;
+			data_in.acc[0] = (lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[0]) * FROM_MG_TO_G);
+			data_in.acc[1] = (lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[1]) * FROM_MG_TO_G);
+			data_in.acc[2] = (lsm6ds3tr_c_from_fs2g_to_mg(data_raw_acceleration[2]) * FROM_MG_TO_G);
 
-    // Store the calibration offsets for later use
-    // (you may store them in global variables or pass them to IMU_Data_Read_Calibrated function)
-    // gyro_offset[0], gyro_offset[1], gyro_offset[2] -> Gyroscope calibration offsets
-    // acc_offset[0], acc_offset[1], acc_offset[2] -> Accelerometer calibration offsets
-    UART_Transmit_Messages_IMU("Finished! \r\n");
-}
+
+			data_in.gyro[0] = (lsm6ds3tr_c_from_fs500dps_to_mdps(data_raw_angular_rate[0]) * FROM_MDPS_TO_DPS) ;
+			data_in.gyro[1] = (lsm6ds3tr_c_from_fs500dps_to_mdps(data_raw_angular_rate[1]) * FROM_MDPS_TO_DPS) ;
+			data_in.gyro[2] = (lsm6ds3tr_c_from_fs500dps_to_mdps(data_raw_angular_rate[2]) * FROM_MDPS_TO_DPS) ;
+
+
+		    /* Don't set mag values because we use only acc and gyro */
+		    data_in.mag[0] = 0.0f;
+		    data_in.mag[1] = 0.0f;
+		    data_in.mag[2] = 0.0f;
 
 
 
-IMUData Transmit_IMU_Data()
-{
+	      MotionFX_propagate(mfxstate, &data_out, &data_in, &delta_time);
+	      MotionFX_update(mfxstate, &data_out, &data_in, &delta_time, NULL);
 
-	  int32_t imu_read_state = IMU_Data_Read_Calibrated();
-	  if (imu_read_state == 0){
+	        // Update imu_data
+	        imu_data.acceleration_x = data_out.gravity[0];
+	        imu_data.acceleration_y = data_out.gravity[1];
+	        imu_data.acceleration_z = data_out.gravity[2];
+	        imu_data.angular_rate_x = data_out.linear_acceleration[0];
+	        imu_data.angular_rate_y = data_out.linear_acceleration[1];
+	        imu_data.angular_rate_z = data_out.linear_acceleration[2];
+	        imu_data.pitch = data_out.rotation[1];
+	        imu_data.roll = data_out.rotation[2];
 
-		    imu_data.acceleration_x = acceleration_mg[0];
-		    imu_data.acceleration_y = acceleration_mg[1];
-		    imu_data.acceleration_z = acceleration_mg[2];
-		    imu_data.angular_rate_x = angular_rate_mdps[0];
-		    imu_data.angular_rate_y = angular_rate_mdps[1];
-		    imu_data.angular_rate_z = angular_rate_mdps[2];
 
-			// Calculate roll and pitch angles
-			float roll = atan2(acceleration_mg[1], acceleration_mg[2]) * (180.0 / M_PI);
-			float pitch = atan2(-acceleration_mg[0], sqrt(acceleration_mg[1] * acceleration_mg[1] + acceleration_mg[2] * acceleration_mg[2])) * (180.0 / M_PI);
-
-		    imu_data.roll = roll;
-		    imu_data.pitch = pitch;
-
-		    return imu_data;
+	        return imu_data;
 	  }	else	{
 
 		  //Error State
@@ -252,3 +240,13 @@ IMUData Transmit_IMU_Data()
 		}
 
 }
+
+
+
+
+
+
+
+
+
+

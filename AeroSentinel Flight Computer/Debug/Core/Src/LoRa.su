@@ -1,6 +1,0 @@
-../Core/Src/LoRa.c:62:6:e22_lora_init	24	static
-../Core/Src/LoRa.c:97:6:e22_lora_transnit	32	static
-../Core/Src/LoRa.c:121:6:e22_lora_receive	16	static
-../Core/Src/LoRa.c:132:6:e22_lora_manager	16	static
-../Core/Src/LoRa.c:163:6:e22_lora_make_ready	4	static
-../Core/Src/LoRa.c:171:6:e22_lora_reception_complete	16	static

@@ -58,4 +58,8 @@ TemperatureData Transmit_Temperature(){
 		}
 	}
 
+	//Error State
+	temperature_data.temperature_celsius = -100.00;
+	return temperature_data;
+
 }

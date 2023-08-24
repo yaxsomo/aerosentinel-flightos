@@ -5,4 +5,4 @@
 ../Core/Src/Compass.c:139:7:QMC_readHeading	32	static
 ../Core/Src/Compass.c:145:9:QMC_Standby	32	static
 ../Core/Src/Compass.c:151:9:QMC_Reset	32	static
-../Core/Src/Compass.c:161:13:Transmit_Compass_Data	32	static
+../Core/Src/Compass.c:161:13:Transmit_Compass_Data	56	static

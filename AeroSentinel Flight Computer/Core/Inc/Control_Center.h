@@ -26,7 +26,6 @@
 #include "IMU.h"
 #include <Pressure.h>
 #include <Temperature.h>
-#include "KalmanFilter.h"
 
 void printIntroTitle();
 void printOptions();
@@ -34,7 +33,13 @@ int32_t initialization_procedure();
 void sensors_readings();
 void UART_Transmit_String(const char* str);
 void handleUserCommand(char command);
+void launch_procedure(int countdown_duration_ms);
+void lora_initialize_sender();
+void lora_initialize_receiver();
+void lora_send();
+void lora_receive();
+void count_down_sequence_fire_test(int countdown_duration_ms);
 uint32_t getNumberOfIterations();
-
+void scanSingleUARTDevice(UART_HandleTypeDef *huart);
 
 #endif /* INC_CONTROL_CENTER_H_ */

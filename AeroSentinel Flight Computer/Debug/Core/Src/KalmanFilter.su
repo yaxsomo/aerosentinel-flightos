@@ -1,5 +1,0 @@
-../Core/Src/KalmanFilter.c:22:6:kalman_init	24	static
-../Core/Src/KalmanFilter.c:43:6:kalman_predict	1024	static
-../Core/Src/KalmanFilter.c:99:6:kalman_update	2160	static
-../Core/Src/KalmanFilter.c:239:6:sensor_fusion	64	static
-../Core/Src/KalmanFilter.c:279:6:execute_kalman	248	static

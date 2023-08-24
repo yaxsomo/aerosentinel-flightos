@@ -11,7 +11,7 @@
 #include <main.h>
 #include <Reg_Addresses.h>
 
-extern I2C_HandleTypeDef hi2c1;
+
 extern UART_HandleTypeDef huart1;
 QMC_t magneto_sensor;
 CompassData compass_data;
@@ -164,8 +164,17 @@ CompassData Transmit_Compass_Data(){
 		if(QMC_read() == 0)
 		{
 			float heading = magneto_sensor.heading;
+
+
+	        // Calculate magDecRad based on your requirements
+			double calculatedMagDecRad = heading * (M_PI / 180.0);
+
+
 			//Compas_Value=magneto_sensor.heading;
 			//char mag_buffer[100];
+			compass_data.mag_unit_x = (double)magneto_sensor.Xaxis;
+			compass_data.mag_unit_y = (double)magneto_sensor.Yaxis;
+			compass_data.mag_unit_z = (double)magneto_sensor.Zaxis;
 			//sprintf(mag_buffer, "X=%d, Y=%d, Z=%d \r\n", magneto_sensor.Xaxis, magneto_sensor.Yaxis, magneto_sensor.Zaxis);
 			//sprintf(mag_heading_buffer, "HEADING : %.1f\r\n",magneto_sensor.heading);
 			//UART_Transmit_Messages_Magnetometer(mag_buffer);
@@ -183,6 +192,9 @@ CompassData Transmit_Compass_Data(){
 
 	        compass_data.heading = heading;
 	        compass_data.direction = direction;
+	        compass_data.magDecRad = calculatedMagDecRad;
+
+
 
 	        return compass_data;
 

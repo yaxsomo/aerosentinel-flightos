@@ -77,7 +77,7 @@ void printOptions(){
     UART_Transmit_String("\r\nChoose an option:\r\n");
     UART_Transmit_String("0 - Initialize Flight Computer\r\n");
     UART_Transmit_String("1 - Read All Sensors\r\n");
-    UART_Transmit_String("2 - Execute Kalman Filtering and Print [KO for now]\r\n");
+    //UART_Transmit_String("2 - LoRa Test (Sender/Receiver)\r\n");
     UART_Transmit_String("3 - Execute Pyro Test (Ignition)\r\n");
     UART_Transmit_String("4 - Execute Pyro Test (Parachute)\r\n");
     UART_Transmit_String("5 - Launch Procedure\r\n");

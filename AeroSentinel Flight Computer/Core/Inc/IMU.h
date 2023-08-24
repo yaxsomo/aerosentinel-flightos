@@ -11,7 +11,9 @@
 #include "lsm6ds3tr-c_reg.h"
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
-#include "KalmanQuaternions.h"
+#include "motion_fx.h"
+#include <string.h>
+#include <stdio.h>
 
 
 /*

@@ -6,10 +6,7 @@
  */
 
 #include "IMU.h"
-#include <string.h>
-#include <stdio.h>
-#include "RCFilter.h"
-#include "motion_fx.h"
+
 
 
 

@@ -130,13 +130,11 @@ void sensors_readings() {
 
 
     IMUData imu_data = IMU_Data_Read();
-    //IMUData imu_data = IMU_Data_Read_Quaternions();
-    //TemperatureData temperature_data = Transmit_Temperature();
-    //PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
-    //CompassData compass_data = Transmit_Compass_Data();
+    TemperatureData temperature_data = Transmit_Temperature();
+    PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
+    CompassData compass_data = Transmit_Compass_Data();
 
     // Print the data for each sensor and append to the file
-
     char buffer[200];
 
     // Format IMU data into the buffer
@@ -148,9 +146,6 @@ void sensors_readings() {
             imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z,
             imu_data.roll, imu_data.pitch);
     UART_Transmit_String(buffer);
-
-    /*
-
     append_data_to_file("sensor_data.txt", buffer);
 
     // Concatenate temperature data to buffer
@@ -172,49 +167,10 @@ void sensors_readings() {
     UART_Transmit_String("------------------------------------------------------ \r\n");
     // Append the separator to the file
     append_data_to_file("sensor_data.txt", "------------------------------------------------------ \r\n");
-    */
-}
-
-
-void ekf_test(){
-
-
-	float acc[3];
-	float gyr[3];
-	float mag[3];
-	char ekf_buffer[100];
-
-	IMUData imu_pre_ekf = IMU_Data_Read();
-	CompassData mag_pre_ekf = Transmit_Compass_Data();
-
-
-	acc[0] = imu_pre_ekf.acceleration_x;
-	acc[1] = imu_pre_ekf.acceleration_y;
-	acc[2] = imu_pre_ekf.acceleration_z;
-	gyr[0] = imu_pre_ekf.angular_rate_x;
-	gyr[1] = imu_pre_ekf.angular_rate_y;
-	gyr[2] = imu_pre_ekf.angular_rate_z;
-	mag[0] = mag_pre_ekf.mag_unit_x;
-	mag[1] = mag_pre_ekf.mag_unit_y;
-	mag[2] = mag_pre_ekf.mag_unit_z;
-
-    updateEKFQuatAtt(gyr, acc, mag, 0.0f, 0.0f, (SAMPLE_TIME_EKF_MS / 1000.0f), 1.0f, &roll_deg, &pitch_deg, &yaw_deg);
-
-	sprintf(ekf_buffer, "%f %f %f\r\n", acc[0], acc[1], acc[2]);
-
-	UART_Transmit_String(ekf_buffer);
-
-	sprintf(ekf_buffer, "%f %f %f\r\n", gyr[0], gyr[1], gyr[2]);
-
-	UART_Transmit_String(ekf_buffer);
-
-	sprintf(ekf_buffer, "%f %f %f\r\n", roll_deg, pitch_deg, yaw_deg);
-
-	UART_Transmit_String(ekf_buffer);
-
-
 
 }
+
+
 
 
 
@@ -274,9 +230,9 @@ void sensors_readings_graphs() {
 
 
 
-void handleUserCommand(char command)
+void menu(char command)
 {
-	int transmission_delay = 50;
+	int transmission_delay = 50; // In Milliseconds
 
 	uint32_t numIterations = 0;
     switch (command)
@@ -290,7 +246,6 @@ void handleUserCommand(char command)
 
     	  }
     	  UART_Transmit_String("\r\n");
-    	  //calibrateSensorOffsets();
         break;
     case '1':
     	UART_Transmit_String("\r\n");
@@ -298,18 +253,12 @@ void handleUserCommand(char command)
     			for (uint32_t i = 0; i < numIterations; i++)
     			        {
     				sensors_readings();
-    				//HAL_Delay(transmission_delay);
+    				HAL_Delay(transmission_delay);
     			        }
         break;
     case '2':
-    	UART_Transmit_String("\r\n");
-    	numIterations = getNumberOfIterations();
-		for (uint32_t i = 0; i < numIterations; i++)
-		        {
-			ekf_test();
-			HAL_Delay(transmission_delay);
-		        }
-        break;
+    	//TODO : IMPLEMENTATION OF LORA TEST
+    	break;
     case '3':
     	UART_Transmit_String("\r\n");
     	UART_Transmit_String("Starting Firing test (Ignition)\r\n");
@@ -324,11 +273,11 @@ void handleUserCommand(char command)
     case '4':
     	UART_Transmit_String("\r\n");
     	UART_Transmit_String("Starting Firing test (Parachute)\r\n");
-    	//UART_Transmit_String("Arming the igniter..");
-    	//pyro_arm(2);
-    	//UART_Transmit_String("Armed\r\n");
+    	UART_Transmit_String("Arming the igniter..");
+    	pyro_arm(2);
+    	UART_Transmit_String("Armed\r\n");
     	count_down_sequence_fire_test(5000);
-    	//pyro_fire(2);
+    	pyro_fire(2);
     	UART_Transmit_String("Test Completed Successfully!\r\n");
     	HAL_Delay(1000);
         break;
@@ -337,7 +286,6 @@ void handleUserCommand(char command)
     	while(1){
     		sensors_readings_graphs();
     	}
-
         break;
     default:
         UART_Transmit_String("Invalid command! Try again.\r\n");

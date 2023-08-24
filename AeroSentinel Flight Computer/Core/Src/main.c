@@ -214,7 +214,7 @@ int main(void)
 	             UART_Transmit_String("\r\n"); // Move to a new line after the command
 	             break;
 	         default:
-	             handleUserCommand(userInput);
+	             menu(userInput);
 	             break;
 	         }
 

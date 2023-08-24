@@ -38,9 +38,10 @@ Core/Src/Control_Center.o: ../Core/Src/Control_Center.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/IMU.h ../Core/Inc/lsm6ds3tr-c_reg.h \
- ../Core/Inc/KalmanQuaternions.h ../Core/Inc/Pressure.h \
- ../Core/Inc/Reg_Addresses.h ../Core/Inc/main.h ../Core/Inc/Temperature.h \
- ../FATFS/App/fatfs.h ../Middlewares/Third_Party/FatFs/src/ff.h \
+ ../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h \
+ ../Core/Inc/Pressure.h ../Core/Inc/Reg_Addresses.h ../Core/Inc/main.h \
+ ../Core/Inc/Temperature.h ../FATFS/App/fatfs.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h \
  ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
@@ -88,7 +89,7 @@ Core/Src/Control_Center.o: ../Core/Src/Control_Center.c \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 ../Core/Inc/IMU.h:
 ../Core/Inc/lsm6ds3tr-c_reg.h:
-../Core/Inc/KalmanQuaternions.h:
+../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h:
 ../Core/Inc/Pressure.h:
 ../Core/Inc/Reg_Addresses.h:
 ../Core/Inc/main.h:

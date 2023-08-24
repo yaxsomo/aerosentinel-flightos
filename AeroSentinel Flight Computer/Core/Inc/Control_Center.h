@@ -32,7 +32,7 @@ void printOptions();
 int32_t initialization_procedure();
 void sensors_readings();
 void UART_Transmit_String(const char* str);
-void handleUserCommand(char command);
+void menu(char command);
 void launch_procedure(int countdown_duration_ms);
 void lora_initialize_sender();
 void lora_initialize_receiver();

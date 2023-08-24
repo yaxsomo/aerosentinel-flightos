@@ -43,8 +43,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
  ../Core/Inc/Control_Center.h ../Core/Inc/Compass.h ../Core/Inc/main.h \
  ../Core/Inc/IMU.h ../Core/Inc/lsm6ds3tr-c_reg.h \
- ../Core/Inc/KalmanQuaternions.h ../Core/Inc/Pressure.h \
- ../Core/Inc/Reg_Addresses.h ../Core/Inc/Temperature.h ../Core/Inc/e220.h
+ ../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h \
+ ../Core/Inc/Pressure.h ../Core/Inc/Reg_Addresses.h \
+ ../Core/Inc/Temperature.h ../Core/Inc/e220.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -96,7 +97,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/main.h:
 ../Core/Inc/IMU.h:
 ../Core/Inc/lsm6ds3tr-c_reg.h:
-../Core/Inc/KalmanQuaternions.h:
+../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h:
 ../Core/Inc/Pressure.h:
 ../Core/Inc/Reg_Addresses.h:
 ../Core/Inc/Temperature.h:

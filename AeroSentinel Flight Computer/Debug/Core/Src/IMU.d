@@ -37,7 +37,6 @@ Core/Src/IMU.o: ../Core/Src/IMU.c ../Core/Inc/IMU.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/KalmanQuaternions.h ../Core/Inc/RCFilter.h \
  ../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h
 ../Core/Inc/IMU.h:
 ../Core/Inc/lsm6ds3tr-c_reg.h:
@@ -78,6 +77,4 @@ Core/Src/IMU.o: ../Core/Src/IMU.c ../Core/Inc/IMU.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/KalmanQuaternions.h:
-../Core/Inc/RCFilter.h:
 ../Middlewares/ST/STM32_MotionFX_Library/Inc/motion_fx.h:

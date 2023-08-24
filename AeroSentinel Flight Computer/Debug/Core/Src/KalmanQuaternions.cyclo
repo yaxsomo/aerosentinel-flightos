@@ -1,2 +1,0 @@
-../Core/Src/KalmanQuaternions.c:37:6:updateEKFQuatAtt_initialize	5
-../Core/Src/KalmanQuaternions.c:95:6:updateEKFQuatAtt	50

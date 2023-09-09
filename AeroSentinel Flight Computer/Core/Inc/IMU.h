@@ -14,6 +14,7 @@
 #include "motion_fx.h"
 #include <string.h>
 #include <stdio.h>
+//#include <Compass.h>
 
 
 /*
@@ -41,6 +42,7 @@ typedef struct {
     float angular_rate_x;
     float angular_rate_y;
     float angular_rate_z;
+    float yaw;
     float roll;
     float pitch;
 } IMUData;
@@ -54,8 +56,6 @@ int32_t platform_read(I2C_HandleTypeDef *handle, uint8_t reg, uint8_t *bufp,
                              uint16_t len);
 int32_t IMU_Initialization();
 IMUData IMU_Data_Read();
-
-
 
 
 #endif /* INC_IMU_H_ */

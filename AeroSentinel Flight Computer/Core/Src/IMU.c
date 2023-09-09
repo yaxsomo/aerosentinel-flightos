@@ -8,7 +8,7 @@
 #include "IMU.h"
 
 
-
+extern TIM_HandleTypeDef htim3;
 
 /**
   * @brief  Inertial Measurement Unit Initialization.
@@ -28,6 +28,9 @@ stmdev_ctx_t device;
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
 IMUData imu_data;
+// Define a flag to indicate when it's time to read the IMU
+volatile uint8_t imu_ready_flag = 0;
+
 
 
 #define STATE_SIZE                      (size_t)(2432)
@@ -38,13 +41,13 @@ IMUData imu_data;
 #define FROM_G_TO_MG  1000.0f
 #define FROM_MDPS_TO_DPS  0.001f
 #define FROM_DPS_TO_MDPS  1000.0f
+#define MOTION_FX_ENGINE_DELTATIME  0.01f
+#define ALGO_FREQ  100U /* Algorithm frequency 100Hz */
+#define ALGO_PERIOD  (1000U / ALGO_FREQ) /* Algorithm period [ms] */
 
 static MFX_knobs_t iKnobs;
 static MFX_knobs_t *ipKnobs = &iKnobs;
 static uint8_t mfxstate[STATE_SIZE];
-
-
-
 
 
 // TRASMIT MESSAGES VIA UART FUNCTION
@@ -81,11 +84,14 @@ int32_t IMU_Initialization(){
 	device.read_reg = platform_read;
 	device.handle = &hi2c1;
 
+	char init_state_buffer[200];
+
 	/* Check device ID */
 	whoamI = 0;
 	lsm6ds3tr_c_device_id_get(&device, &whoamI);
 
 	if ( whoamI != LSM6DS3TR_C_ID ) {
+		UART_Transmit_Messages_IMU("ERROR: IMU MALFUNCTION");
 		return -1;
 	}
 
@@ -107,8 +113,8 @@ int32_t IMU_Initialization(){
 	  /* Enable Block Data Update */
 	  bdu = lsm6ds3tr_c_block_data_update_set(&device, PROPERTY_ENABLE);
 	  /* Set Output Data Rate */
-	  xl_dr= lsm6ds3tr_c_xl_data_rate_set(&device, LSM6DS3TR_C_XL_ODR_104Hz);
-	  gy_dr= lsm6ds3tr_c_gy_data_rate_set(&device, LSM6DS3TR_C_XL_ODR_104Hz);
+	  xl_dr= lsm6ds3tr_c_xl_data_rate_set(&device, LSM6DS3TR_C_XL_ODR_833Hz);
+	  gy_dr= lsm6ds3tr_c_gy_data_rate_set(&device, LSM6DS3TR_C_GY_ODR_833Hz);
 	  /* Set full scale */
 	  xl_fs= lsm6ds3tr_c_xl_full_scale_set(&device, LSM6DS3TR_C_2g);
 	  gy_fs= lsm6ds3tr_c_gy_full_scale_set(&device, LSM6DS3TR_C_500dps);
@@ -135,19 +141,20 @@ int32_t IMU_Initialization(){
 
 		state = int_set + xl_fs + xl_dr + gy_fs + gy_dr + bdu + xl_fas + xl_lp + gy_bps;
 
-		//UART_Transmit_Messages_IMU("Configuration successful. \r\n");
+		sprintf(init_state_buffer,"int_set: %ld | xl_fs: %ld | xl_dr: %ld | gy_fs: %ld | gy_dr: %ld | bdu: %ld | xl_fas: %ld | xl_lp: %ld | gy_bps: %ld \r\n",int_set,xl_fs, xl_dr, gy_fs, gy_dr, bdu, xl_fas, xl_lp, gy_bps);
+		UART_Transmit_Messages_IMU(init_state_buffer);
 
 
 		  MotionFX_initialize((MFXState_t *)mfxstate);
 
 		  MotionFX_getKnobs(mfxstate, ipKnobs);
 
-		  ipKnobs->acc_orientation[0] = 'n';
+		  ipKnobs->acc_orientation[0] = 'u';
 		  ipKnobs->acc_orientation[1] = 'w';
-		  ipKnobs->acc_orientation[2] = 'u';
-		  ipKnobs->gyro_orientation[0] = 'n';
+		  ipKnobs->acc_orientation[2] = 'n';
+		  ipKnobs->gyro_orientation[0] = 'u';
 		  ipKnobs->gyro_orientation[1] = 'w';
-		  ipKnobs->gyro_orientation[2] = 'u';
+		  ipKnobs->gyro_orientation[2] = 'n';
 
 		  ipKnobs->gbias_acc_th_sc = GBIAS_ACC_TH_SC;
 		  ipKnobs->gbias_gyro_th_sc = GBIAS_GYRO_TH_SC;
@@ -181,6 +188,8 @@ IMUData IMU_Data_Read(){
 	acc_reading = lsm6ds3tr_c_acceleration_raw_get(&device,data_raw_acceleration);
 	//GYROSCOPE
 	gyro_reading = lsm6ds3tr_c_angular_rate_raw_get(&device,data_raw_angular_rate);
+	// COMPASS
+    //CompassData compass_data = Transmit_Compass_Data();
 
 
 	reading_state = gyro_reading + acc_reading; // If 0 -> Success | Otherwise error code
@@ -200,9 +209,9 @@ IMUData IMU_Data_Read(){
 
 
 		    /* Don't set mag values because we use only acc and gyro */
-		    data_in.mag[0] = 0.0f;
-		    data_in.mag[1] = 0.0f;
-		    data_in.mag[2] = 0.0f;
+		    data_in.mag[0] = 0.0;
+		    data_in.mag[1] = 0.0;
+		    data_in.mag[2] = 0.0;
 
 
 
@@ -216,6 +225,7 @@ IMUData IMU_Data_Read(){
 	        imu_data.angular_rate_x = data_out.linear_acceleration[0];
 	        imu_data.angular_rate_y = data_out.linear_acceleration[1];
 	        imu_data.angular_rate_z = data_out.linear_acceleration[2];
+	        //imu_data.yaw = (float)compass_data.heading;
 	        imu_data.pitch = data_out.rotation[1];
 	        imu_data.roll = data_out.rotation[2];
 
@@ -237,10 +247,6 @@ IMUData IMU_Data_Read(){
 		}
 
 }
-
-
-
-
 
 
 

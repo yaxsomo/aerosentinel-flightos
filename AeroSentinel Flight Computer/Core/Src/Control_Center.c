@@ -130,21 +130,30 @@ void sensors_readings() {
 
 
     IMUData imu_data = IMU_Data_Read();
-    TemperatureData temperature_data = Transmit_Temperature();
-    PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
+    //TemperatureData temperature_data = Transmit_Temperature();
+    //PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
     CompassData compass_data = Transmit_Compass_Data();
+
+
 
     // Print the data for each sensor and append to the file
     char buffer[200];
 
     // Format IMU data into the buffer
-    sprintf(buffer, "IMU Data: \n"
-            "Acceleration (X=%.3f g, Y=%.3f g, Z=%.3f g), \n"
-            "Angular Rate (X=%4.2f dps, Y=%4.2f dps, Z=%4.2f dps), \n"
-            "Roll=%.3f°, Pitch=%.3f°\r", // Note the '\r' to return to the beginning of the line
-            imu_data.acceleration_x, imu_data.acceleration_y, imu_data.acceleration_z,
-            imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z,
-            imu_data.roll, imu_data.pitch);
+    sprintf(buffer,"----------------------"
+    		"Roll=%.3f°, \r\n"
+    		"Pitch=%.3f° , \r\n"
+    		"Yaw=%.3f \r\n",imu_data.roll, imu_data.pitch, compass_data.heading);
+    UART_Transmit_String(buffer);
+
+    /*
+	sprintf(buffer, "IMU Data: \n"
+		"Acceleration (X=%.3f g, Y=%.3f g, Z=%.3f g), \r\n"
+		"Angular Rate (X=%4.2f dps, Y=%4.2f dps, Z=%4.2f dps), \r\n"
+		"Roll=%.3f°, Pitch=%.3f°\r\n", // Note the '\r' to return to the beginning of the line
+		imu_data.acceleration_x, imu_data.acceleration_y, imu_data.acceleration_z,
+		imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z,
+		imu_data.roll, imu_data.pitch);
     UART_Transmit_String(buffer);
     append_data_to_file("sensor_data.txt", buffer);
 
@@ -167,7 +176,7 @@ void sensors_readings() {
     UART_Transmit_String("------------------------------------------------------ \r\n");
     // Append the separator to the file
     append_data_to_file("sensor_data.txt", "------------------------------------------------------ \r\n");
-
+*/
 }
 
 

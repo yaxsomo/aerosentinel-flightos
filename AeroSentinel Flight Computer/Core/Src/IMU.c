@@ -84,7 +84,7 @@ int32_t IMU_Initialization(){
 	device.read_reg = platform_read;
 	device.handle = &hi2c1;
 
-	char init_state_buffer[200];
+	//char init_state_buffer[200];
 
 	/* Check device ID */
 	whoamI = 0;
@@ -141,13 +141,18 @@ int32_t IMU_Initialization(){
 
 		state = int_set + xl_fs + xl_dr + gy_fs + gy_dr + bdu + xl_fas + xl_lp + gy_bps;
 
-		sprintf(init_state_buffer,"int_set: %ld | xl_fs: %ld | xl_dr: %ld | gy_fs: %ld | gy_dr: %ld | bdu: %ld | xl_fas: %ld | xl_lp: %ld | gy_bps: %ld \r\n",int_set,xl_fs, xl_dr, gy_fs, gy_dr, bdu, xl_fas, xl_lp, gy_bps);
-		UART_Transmit_Messages_IMU(init_state_buffer);
+		//sprintf(init_state_buffer,"int_set: %ld | xl_fs: %ld | xl_dr: %ld | gy_fs: %ld | gy_dr: %ld | bdu: %ld | xl_fas: %ld | xl_lp: %ld | gy_bps: %ld \r\n",int_set,xl_fs, xl_dr, gy_fs, gy_dr, bdu, xl_fas, xl_lp, gy_bps);
+		//UART_Transmit_Messages_IMU(init_state_buffer);
 
+		UART_Transmit_Messages_IMU("Kalman Filter initialization..!");
 
 		  MotionFX_initialize((MFXState_t *)mfxstate);
 
+
+
 		  MotionFX_getKnobs(mfxstate, ipKnobs);
+
+
 
 		  ipKnobs->acc_orientation[0] = 'u';
 		  ipKnobs->acc_orientation[1] = 'w';
@@ -167,7 +172,7 @@ int32_t IMU_Initialization(){
 		  MotionFX_enable_6X(mfxstate, MFX_ENGINE_ENABLE);
 		  MotionFX_enable_9X(mfxstate, MFX_ENGINE_DISABLE);
 
-
+		  UART_Transmit_Messages_IMU("Done! \r\n");
 		return state;
 
 

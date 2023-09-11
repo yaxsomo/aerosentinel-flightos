@@ -2,4 +2,4 @@
 ../Core/Src/IMU.c:60:9:platform_read	2
 ../Core/Src/IMU.c:69:9:platform_write	2
 ../Core/Src/IMU.c:79:9:IMU_Initialization	3
-../Core/Src/IMU.c:178:9:IMU_Data_Read	2
+../Core/Src/IMU.c:183:9:IMU_Data_Read	2

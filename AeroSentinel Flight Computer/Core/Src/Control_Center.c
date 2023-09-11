@@ -17,15 +17,18 @@
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart6;
-double Va_mps = 10.0;
-double T = 0.1;
-double NdivT = 125;
 
 
-const uint32_t SAMPLE_TIME_EKF_MS = 100;
-float roll_deg = 0.0f;
-float pitch_deg = 0.0f;
-float yaw_deg = 0.0f;
+// **************** RTOS SECTION **************** //
+
+// Define a semaphore to signal when to start the menu
+//osSemaphoreId_t menuSemaphore;
+// Declare a variable to store the current menu state
+enum MenuState currentMenuState = MENU_MAIN;
+
+
+// **************** END RTOS SECTION **************** //
+
 
 
 
@@ -51,6 +54,125 @@ void UART_Transmit_String(const char* str)
 }
 
 
+//-------------------------   RTOS DEDICATED FUNCTIONS --------------------------------//
+
+
+// Function to wait for the start command ('00$')
+bool waitForStartCommand(void) {
+    char inputBuffer[4] = {0}; // Buffer to store received command
+
+    // Read user input character by character until we encounter '$'
+    for (int bufferIndex = 0; bufferIndex < 3; bufferIndex++) {
+        HAL_UART_Receive(&huart1, (uint8_t *)&inputBuffer[bufferIndex], sizeof(char), HAL_MAX_DELAY);
+    }
+
+    // Null-terminate the input buffer
+    inputBuffer[3] = '\0';
+
+    // Check if the received command is '00$'
+    if (strcmp(inputBuffer, "00$") == 0) {
+        return true; // If '00$' is received, return true
+    } else {
+        return false; // If not received, return false
+    }
+}
+
+
+
+// Function to wait for user input
+char waitForUserInput(void) {
+    char userInput = 0;
+
+    // Wait for user input (single character)
+    HAL_UART_Receive(&huart1, (uint8_t*)&userInput, 1, HAL_MAX_DELAY);
+
+    // Return the received character
+    return userInput;
+}
+
+
+
+// Function to print the menu based on the current state
+void printMenu(enum MenuState state) {
+    switch (state) {
+        case MENU_MAIN:
+
+            UART_Transmit_String("0 - Initialize Flight Computer\r\n");
+            UART_Transmit_String("1 - Read All Sensors\r\n");
+            UART_Transmit_String("2 - LoRa Test (Sender/Receiver)\r\n");
+            UART_Transmit_String("3 - Execute Pyro Test (Ignition)\r\n");
+            UART_Transmit_String("4 - Execute Pyro Test (Parachute)\r\n");
+            UART_Transmit_String("5 - Launch Procedure\r\n");
+            UART_Transmit_String("\r\n");
+            break;
+        case MENU_INIT:
+            UART_Transmit_String("Initializing the Flight Controller...\r\n");
+            break;
+        case MENU_SENSOR_READINGS:
+            UART_Transmit_String("Reading Sensors...\r\n");
+            break;
+        case MENU_LORA:
+            UART_Transmit_String("Running LoRa Test...\r\n");
+            break;
+        case MENU_IGNITION:
+            UART_Transmit_String("Starting Firing test (Ignition)...\r\n");
+            break;
+        case MENU_PARACHUTE:
+            UART_Transmit_String("Starting Firing test (Parachute)...\r\n");
+            break;
+        case MENU_LAUNCH:
+            UART_Transmit_String("Launching Procedure...\r\n");
+            break;
+        default:
+            break;
+    }
+}
+
+
+
+// Function to handle user input and change the current state
+void handleUserInput(char command) {
+    switch (command) {
+        case '0':
+            currentMenuState = MENU_INIT;
+            break;
+        case '1':
+            currentMenuState = MENU_SENSOR_READINGS;
+            break;
+        case '2':
+            currentMenuState = MENU_LORA;
+            break;
+        case '3':
+            currentMenuState = MENU_IGNITION;
+            break;
+        case '4':
+            currentMenuState = MENU_PARACHUTE;
+            break;
+        case '5':
+            currentMenuState = MENU_LAUNCH;
+            break;
+        default:
+            UART_Transmit_String("Invalid command! Try again.\r\n");
+            break;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-------------------------   END RTOS DEDICATED FUNCTIONS --------------------------------//
 
 
 
@@ -58,10 +180,10 @@ void printIntroTitle()
 {
     UART_Transmit_String("\r\n");
     UART_Transmit_String("*********************************************************\r\n");
-    UART_Transmit_String("*               AEROSENTINEL Flight Computer           *\r\n");
+    UART_Transmit_String("*               AEROSENTINEL Flight Computer            *\r\n");
     UART_Transmit_String("*    A versatile flight control system for your rocket  *\r\n");
     UART_Transmit_String("*********************************************************\r\n");
-    UART_Transmit_String("               Welcome to AEROSENTINEL CLI              \r\n");
+    UART_Transmit_String("*               Welcome to AEROSENTINEL CLI             *\r\n");
     UART_Transmit_String("*********************************************************\r\n");
     UART_Transmit_String("\r\n");
     mount_sd_card();
@@ -130,8 +252,8 @@ void sensors_readings() {
 
 
     IMUData imu_data = IMU_Data_Read();
-    //TemperatureData temperature_data = Transmit_Temperature();
-    //PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
+    TemperatureData temperature_data = Transmit_Temperature();
+    PressureTempData pressure_temp_data = Transmit_Pressure_Temp_Data();
     CompassData compass_data = Transmit_Compass_Data();
 
 
@@ -146,7 +268,6 @@ void sensors_readings() {
     		"Yaw=%.3f \r\n",imu_data.roll, imu_data.pitch, compass_data.heading);
     UART_Transmit_String(buffer);
 
-    /*
 	sprintf(buffer, "IMU Data: \n"
 		"Acceleration (X=%.3f g, Y=%.3f g, Z=%.3f g), \r\n"
 		"Angular Rate (X=%4.2f dps, Y=%4.2f dps, Z=%4.2f dps), \r\n"
@@ -155,28 +276,27 @@ void sensors_readings() {
 		imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z,
 		imu_data.roll, imu_data.pitch);
     UART_Transmit_String(buffer);
-    append_data_to_file("sensor_data.txt", buffer);
+    append_data_to_file("data.txt", buffer);
 
     // Concatenate temperature data to buffer
     sprintf(buffer, "Temperature: %.2f°C \r\n", temperature_data.temperature_celsius/100);
     UART_Transmit_String(buffer);
-    append_data_to_file("sensor_data.txt", buffer);
+    append_data_to_file("data.txt", buffer);
 
     // Concatenate pressure and temperature data to buffer
     sprintf(buffer, "PRESSURE : %.2f hPa, TEMPERATURE : %.2f°C\r\n",
             pressure_temp_data.pressure_hpa, pressure_temp_data.temperature_celsius);
     UART_Transmit_String(buffer);
-    append_data_to_file("sensor_data.txt", buffer);
+    append_data_to_file("data.txt", buffer);
 
     // Concatenate compass data to buffer
     sprintf(buffer, "HEADING (YAW): %.1f\r\n", compass_data.heading);
     UART_Transmit_String(buffer);
-    append_data_to_file("sensor_data.txt", buffer);
+    append_data_to_file("data.txt", buffer);
 
     UART_Transmit_String("------------------------------------------------------ \r\n");
     // Append the separator to the file
-    append_data_to_file("sensor_data.txt", "------------------------------------------------------ \r\n");
-*/
+    append_data_to_file("data.txt", "------------------------------------------------------ \r\n");
 }
 
 
@@ -184,7 +304,7 @@ void sensors_readings() {
 
 
 
-// Custom function to print data in the required model format
+// Send data to Ground Control System Software
 void send_data_to_gcs(int datatype, float value) {
 	// Print the data for each sensor and append to the file
 	char gcs_buffer[200];
@@ -238,70 +358,78 @@ void sensors_readings_graphs() {
 
 
 
+// Modify the menu function to use the current state
+void menu(char command) {
+    int transmission_delay = 50; // In Milliseconds
+    handleUserInput(command);
+    switch (currentMenuState) {
+        case MENU_MAIN:
 
-void menu(char command)
-{
-	int transmission_delay = 50; // In Milliseconds
+            break;
+        case MENU_INIT:
+            if (currentMenuState == MENU_INIT) {
+                uint32_t initialization_state = initialization_procedure();
+                if (initialization_state != 0) {
+                    UART_Transmit_String("Error initializing the Flight Controller.\r\n");
+                } else {
+                    UART_Transmit_String("Flight Controller Initialized successfully!\r\n");
+                }
+            }
+            break;
+        case MENU_SENSOR_READINGS:
+            if (currentMenuState == MENU_SENSOR_READINGS) {
+                uint32_t numIterations = getNumberOfIterations();
+                UART_Transmit_String("\r\n");
+                for (uint32_t i = 0; i < numIterations; i++) {
+                    sensors_readings();
+                    HAL_Delay(transmission_delay);
+                }
+            }
+            break;
+        case MENU_LORA:
+            // TODO: Implement LoRa Test
+            break;
+        case MENU_IGNITION:
+            if (currentMenuState == MENU_IGNITION) {
+                UART_Transmit_String("\r\n");
+                UART_Transmit_String("Starting Firing test (Ignition)\r\n");
+                UART_Transmit_String("Arming the igniter...");
+                pyro_arm(1);
+                UART_Transmit_String("Armed\r\n");
+                count_down_sequence_fire_test(5000);
+                pyro_fire(1);
+                UART_Transmit_String("Test Completed Successfully!\r\n");
+                HAL_Delay(1000);
+            }
+            break;
+        case MENU_PARACHUTE:
+            if (currentMenuState == MENU_PARACHUTE) {
+                UART_Transmit_String("\r\n");
+                UART_Transmit_String("Starting Firing test (Parachute)\r\n");
+                UART_Transmit_String("Arming the igniter...");
+                pyro_arm(2);
+                UART_Transmit_String("Armed\r\n");
+                count_down_sequence_fire_test(5000);
+                pyro_fire(2);
+                UART_Transmit_String("Test Completed Successfully!\r\n");
+                HAL_Delay(1000);
+            }
+            break;
+        case MENU_LAUNCH:
+            if (currentMenuState == MENU_LAUNCH) {
+                launch_procedure(10000);
+                while (1) {
+                    sensors_readings_graphs();
+                }
 
-	uint32_t numIterations = 0;
-    switch (command)
-    {
-    case '0':
-    	  uint32_t initialization_state = initialization_procedure();
-    	  if(initialization_state != 0){
-    		  UART_Transmit_String("Error initializing the Flight Controller.");
-    	  } else{
-    		  UART_Transmit_String("Flight Controller Initialized successfully!\r\n");
-
-    	  }
-    	  UART_Transmit_String("\r\n");
-        break;
-    case '1':
-    	UART_Transmit_String("\r\n");
-    	    	numIterations = getNumberOfIterations();
-    			for (uint32_t i = 0; i < numIterations; i++)
-    			        {
-    				sensors_readings();
-    				HAL_Delay(transmission_delay);
-    			        }
-        break;
-    case '2':
-    	//TODO : IMPLEMENTATION OF LORA TEST
-    	break;
-    case '3':
-    	UART_Transmit_String("\r\n");
-    	UART_Transmit_String("Starting Firing test (Ignition)\r\n");
-    	UART_Transmit_String("Arming the igniter..");
-    	pyro_arm(1);
-    	UART_Transmit_String("Armed\r\n");
-    	count_down_sequence_fire_test(5000);
-    	pyro_fire(1);
-    	UART_Transmit_String("Test Completed Successfully!\r\n");
-    	HAL_Delay(1000);
-        break;
-    case '4':
-    	UART_Transmit_String("\r\n");
-    	UART_Transmit_String("Starting Firing test (Parachute)\r\n");
-    	UART_Transmit_String("Arming the igniter..");
-    	pyro_arm(2);
-    	UART_Transmit_String("Armed\r\n");
-    	count_down_sequence_fire_test(5000);
-    	pyro_fire(2);
-    	UART_Transmit_String("Test Completed Successfully!\r\n");
-    	HAL_Delay(1000);
-        break;
-    case '5':
-    	launch_procedure(10000);
-    	while(1){
-    		sensors_readings_graphs();
-    	}
-        break;
-    default:
-        UART_Transmit_String("Invalid command! Try again.\r\n");
-        break;
+            }
+            break;
+        default:
+            break;
     }
 
-    printOptions();
+    currentMenuState = MENU_MAIN; // Return to the main menu
+    printMenu(currentMenuState);
 }
 
 

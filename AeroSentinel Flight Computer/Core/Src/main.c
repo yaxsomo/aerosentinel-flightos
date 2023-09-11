@@ -21,6 +21,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -29,11 +30,13 @@
 #include <Control_Center.h>
 #include "fatfs.h"
 #include "e220.h"
+#include "RTOS_Attributes_Local.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 
 /* USER CODE END PTD */
 
@@ -68,6 +71,30 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
 
+/* Definitions for StartCommand */
+osThreadId_t StartCommandHandle;
+const osThreadAttr_t StartCommand_attributes = {
+  .name = "StartCommand",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for Menu */
+osThreadId_t MenuHandle;
+const osThreadAttr_t Menu_attributes = {
+  .name = "Menu",
+  .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for menuSemaphore */
+osSemaphoreId_t menuSemaphoreHandle;
+const osSemaphoreAttr_t menuSemaphore_attributes = {
+  .name = "menuSemaphore"
+};
+/* Definitions for startCommandEvent */
+osEventFlagsId_t startCommandEventHandle;
+const osEventFlagsAttr_t startCommandEvent_attributes = {
+  .name = "startCommandEvent"
+};
 /* USER CODE BEGIN PV */
 
 
@@ -92,6 +119,9 @@ static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_RTC_Init(void);
 static void MX_CRC_Init(void);
+void StartCommandWaitTask(void *argument);
+void MenuTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -107,6 +137,8 @@ void UART_Transmit_Uint8(uint8_t value)
     sprintf(buffer, "%hhu\r\n", value);
     HAL_UART_Transmit(&huart1, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
 }
+
+
 
 
 /* USER CODE END 0 */
@@ -165,30 +197,68 @@ int main(void)
 
   //INITIALIZATION SECTOR
 
-  printIntroTitle();
-  printOptions();
-
-
-
-  //lora_initialize_sender();
-  //lora_initialize_receiver();
-
-
-
-
-
-
-
-
-
-
-
-
+  //printIntroTitle();
+  //printOptions();
 
 
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of menuSemaphore */
+  menuSemaphoreHandle = osSemaphoreNew(1, 1, &menuSemaphore_attributes);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of StartCommand */
+  StartCommandHandle = osThreadNew(StartCommandWaitTask, NULL, &StartCommand_attributes);
+
+  /* creation of Menu */
+  MenuHandle = osThreadNew(MenuTask, NULL, &Menu_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+
+  // Create and start the Command Wait task
+  //osThreadNew(StartCommandWaitTask, NULL, &commandWaitTask_attributes);
+
+  // Create and start the MenuTask
+  //osThreadNew(MenuTask, NULL, NULL); // This line creates and starts the MenuTask
+
+
+  /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of startCommandEvent */
+  startCommandEventHandle = osEventFlagsNew(&startCommandEvent_attributes);
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+
+
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -223,19 +293,6 @@ int main(void)
 
 
 	  //END MENU SECTOR ------------------------------------------------------------------------
-
-
-	  //LORA TEST SECTION
-
-
-	  //lora_send();
-	  //lora_receive();
-
-
-
-
-
-
 
 
   }
@@ -912,10 +969,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -925,6 +982,70 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartCommandWaitTask */
+/**
+  * @brief  Function implementing the StartCommand thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartCommandWaitTask */
+void StartCommandWaitTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+    //osSemaphoreAcquire(menuSemaphoreHandle, osWaitForever);
+
+
+  /* Infinite loop */
+  for(;;)
+  {
+	  if (waitForStartCommand()){
+		  break;
+	  }
+      osDelay(1000);
+  }
+
+  // Start your main program here
+  printIntroTitle();
+
+  // Set the event flag to signal that the start command has been received
+  osEventFlagsSet(startCommandEventHandle, 0x0001U);
+
+
+  // Exit this task
+  osThreadExit();
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_MenuTask */
+/**
+* @brief Function implementing the Menu thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MenuTask */
+void MenuTask(void *argument)
+{
+  /* USER CODE BEGIN MenuTask */
+	  // Wait for the start command event to be set
+	  osEventFlagsWait(startCommandEventHandle, 0x0001U, osFlagsWaitAny, osWaitForever);
+
+      // Print menu options and handle user input
+      printMenu(MENU_MAIN);
+
+
+  /* Infinite loop */
+  for(;;)
+  {
+	  UART_Transmit_String("Choose an option:\r\n");
+      // Wait for user input and execute the corresponding command
+      char userInput = waitForUserInput(); // Implement this function to get user input
+      menu(userInput);
+  }
+
+  UART_Transmit_String("OOPS.. You're not supposed to be here!");
+  /* USER CODE END MenuTask */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

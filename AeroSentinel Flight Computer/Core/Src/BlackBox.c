@@ -58,9 +58,9 @@ void mount_sd_card(){
 	fresult = f_mount(&fs, "",0);
 	if(fresult != FR_OK)
 	{
-		UART_Transmit_Messages_BlackBox("Error mounting the SD Card \r\n");
+		UART_Transmit_Messages_BlackBox("*               Error mounting the SD Card              *\r\n");
 	} else {
-		UART_Transmit_Messages_BlackBox("SD Card mounted successfully! \r\n");
+		UART_Transmit_Messages_BlackBox("*              SD Card mounted successfully!            *\r\n");
 	}
 }
 
@@ -69,14 +69,16 @@ void check_free_space() {
 
     total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
     float total_GB = (float)total / (1024.0 * 1024.0);
-    sprintf(data_buffer, "SD CARD Total Size: \t%.2f GB\r\n", total_GB);
+    sprintf(data_buffer, "*              SD CARD Total Size: \t%.2f GB        *\r\n", total_GB);
+
     UART_Transmit_Messages_BlackBox(data_buffer);
     buf_clear();
 
     free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
     float free_space_GB = (float)free_space / (1024.0 * 1024.0);
-    sprintf(data_buffer, "SD CARD Free Space: \t%.2f GB\r\n", free_space_GB);
+    sprintf(data_buffer, "*              SD CARD Free Space: \t%.2f GB        *\r\n", free_space_GB);
     UART_Transmit_Messages_BlackBox(data_buffer);
+	UART_Transmit_Messages_BlackBox("*********************************************************\r\n");
 }
 
 
@@ -87,12 +89,14 @@ void check_free_space() {
 void create_file(const char* filename) {
     // Open file to write OR create it if it does not exist
     fresult = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_READ | FA_WRITE);
+    char err[100];
 
     if (fresult == FR_OK) {
         UART_Transmit_Messages_BlackBox("File created successfully! \r\n");
         f_close(&fil);
     } else {
-        UART_Transmit_Messages_BlackBox("Error creating the file. \r\n");
+    	sprintf(err,"Error creating the file:  %d \r\n", fresult);
+        UART_Transmit_Messages_BlackBox(err);
     }
 }
 

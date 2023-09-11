@@ -43,6 +43,8 @@ enum MenuState {
 };
 
 
+#define MAX_LEN 128
+
 
 // ---------  RTOS FUNCTIONS PROTOTYPES ---------//
 bool waitForStartCommand(void);
@@ -58,7 +60,7 @@ void handleUserInput(char command);
 
 
 
-
+void UART_Transmit_Logo();
 void printIntroTitle();
 void printOptions();
 int32_t initialization_procedure();

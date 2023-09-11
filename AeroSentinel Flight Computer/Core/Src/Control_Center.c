@@ -54,6 +54,48 @@ void UART_Transmit_String(const char* str)
 }
 
 
+// Function to read and transmit the ASCII art from a .ans file
+void UART_Transmit_Logo() {
+
+
+
+
+
+
+    UART_Transmit_String("                                                                \r\n");
+	UART_Transmit_String("                                                                \r\n");
+	UART_Transmit_String("                            ,,								  \r\n");
+	UART_Transmit_String("                           ^B$~								  \r\n");
+	UART_Transmit_String("                          '$$$$|								  \r\n");
+	UART_Transmit_String("                           ,$$$$/							      \r\n");
+	UART_Transmit_String("                            _$$$$j							  \r\n");
+	UART_Transmit_String("                             {$$$$v'							  \r\n");
+	UART_Transmit_String("                              <$$$$8.						      \r\n");
+	UART_Transmit_String("                               i$$$$x						      \r\n");
+	UART_Transmit_String("                    ,'          I$$$$'						  \r\n");
+	UART_Transmit_String("                   +$8`     |M`  %$$$n.						  \r\n");
+	UART_Transmit_String("                  |$$$@.   1$$@`  'W$$$W'					      \r\n");
+	UART_Transmit_String("                 t$$$$:   '*}|[M   '&$$$8'				      \r\n");
+	UART_Transmit_String("               .u$$$$!    x8/fx$,   `@$$$%,					  \r\n");
+	UART_Transmit_String("              '&$$$$+     $$$$$${    `%$$$$'					  \r\n");
+	UART_Transmit_String("             .8$$$$>      $$$$$$|     `8$$$&.				      \r\n");
+	UART_Transmit_String("             x$$$$l       $$$$$$}      '&$$$W'				  \r\n");
+	UART_Transmit_String("           .r$$$%'        #$$$$$:       .n$$$8^				  \r\n");
+ 	UART_Transmit_String("          'M$$$&'       .t+$$$$@>].       /$$$$;				  \r\n");
+	UART_Transmit_String("         '&$$$W'       ,$$,$$$$)f$W        x$$$$!			      \r\n");
+	UART_Transmit_String("        '8$$$&.        !$$;t$$$`@$$        '8$$$$<			  \r\n");
+	UART_Transmit_String("       ,B$$$B`         !$$>.^;..$$$         'c$$$$1			  \r\n");
+	UART_Transmit_String("      '$$$$%`          '+^. ^>  ':{           j$$$$-			  \r\n");
+	UART_Transmit_String("     .&$$$8'            .^' ^!  '`             t$$$$:		      \r\n");
+	UART_Transmit_String("    'W$$$&'            '`   `;   .^             /$$$$I		  \r\n");
+	UART_Transmit_String("   ^8$$$n.                  `,                   +$$$$]		  \r\n");
+	UART_Transmit_String("  ;$$$$/                    .^                    ,$$$$j		  \r\n");
+	UART_Transmit_String(" !$$$$x                     .'                     _$$$$x.	  \r\n");
+	UART_Transmit_String(" .....                       .                      .....	      \r\n");
+
+}
+
+
 //-------------------------   RTOS DEDICATED FUNCTIONS --------------------------------//
 
 
@@ -96,7 +138,7 @@ char waitForUserInput(void) {
 void printMenu(enum MenuState state) {
     switch (state) {
         case MENU_MAIN:
-
+        	UART_Transmit_String("\r\n");
             UART_Transmit_String("0 - Initialize Flight Computer\r\n");
             UART_Transmit_String("1 - Read All Sensors\r\n");
             UART_Transmit_String("2 - LoRa Test (Sender/Receiver)\r\n");
@@ -178,14 +220,11 @@ void handleUserInput(char command) {
 
 void printIntroTitle()
 {
-    UART_Transmit_String("\r\n");
+	UART_Transmit_Logo();
     UART_Transmit_String("*********************************************************\r\n");
-    UART_Transmit_String("*               AEROSENTINEL Flight Computer            *\r\n");
+    UART_Transmit_String("*               AEROSENTINEL Flight OS                  *\r\n");
     UART_Transmit_String("*    A versatile flight control system for your rocket  *\r\n");
     UART_Transmit_String("*********************************************************\r\n");
-    UART_Transmit_String("*               Welcome to AEROSENTINEL CLI             *\r\n");
-    UART_Transmit_String("*********************************************************\r\n");
-    UART_Transmit_String("\r\n");
     mount_sd_card();
     check_free_space();
 
@@ -194,18 +233,6 @@ void printIntroTitle()
 
 
 }
-
-void printOptions(){
-    UART_Transmit_String("\r\nChoose an option:\r\n");
-    UART_Transmit_String("0 - Initialize Flight Computer\r\n");
-    UART_Transmit_String("1 - Read All Sensors\r\n");
-    //UART_Transmit_String("2 - LoRa Test (Sender/Receiver)\r\n");
-    UART_Transmit_String("3 - Execute Pyro Test (Ignition)\r\n");
-    UART_Transmit_String("4 - Execute Pyro Test (Parachute)\r\n");
-    UART_Transmit_String("5 - Launch Procedure\r\n");
-    UART_Transmit_String("\r\n");
-}
-
 
 int32_t initialization_procedure(){
 

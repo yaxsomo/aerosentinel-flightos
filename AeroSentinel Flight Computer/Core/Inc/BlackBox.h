@@ -10,11 +10,14 @@
 
 #include <stdbool.h>
 
+
+
 void UART_Transmit_Messages_BlackBox(const char* str);
 bool file_exists(const char* filename);
 int buf_size(char *buf);
 void buf_clear(void);
 void mount_sd_card();
+int mount_sd_card_plus();
 void check_free_space();
 //void create_file();
 void create_file(const char* filename);

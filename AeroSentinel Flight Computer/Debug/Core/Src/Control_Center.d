@@ -57,7 +57,7 @@ Core/Src/Control_Center.o: ../Core/Src/Control_Center.c \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
- ../Core/Inc/BlackBox.h ../Core/Inc/pyro.h ../Core/Inc/e220.h
+ ../Core/Inc/BlackBox.h ../Core/Inc/pyro.h ../Core/Inc/e22900t22d.h
 ../Core/Inc/Control_Center.h:
 ../Core/Inc/Compass.h:
 ../Core/Inc/main.h:
@@ -126,4 +126,4 @@ Core/Src/Control_Center.o: ../Core/Src/Control_Center.c \
 ../FATFS/Target/user_diskio.h:
 ../Core/Inc/BlackBox.h:
 ../Core/Inc/pyro.h:
-../Core/Inc/e220.h:
+../Core/Inc/e22900t22d.h:

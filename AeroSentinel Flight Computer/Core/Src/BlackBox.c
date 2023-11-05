@@ -22,6 +22,29 @@ FATFS *pfs;
 DWORD fre_clust;
 uint32_t total, free_space;
 
+const char* fresultStrings[] = {
+    "FR_OK",
+    "FR_DISK_ERR",
+    "FR_INT_ERR",
+    "FR_NOT_READY",
+    "FR_NO_FILE",
+    "FR_NO_PATH",
+    "FR_INVALID_NAME",
+    "FR_DENIED",
+    "FR_EXIST",
+    "FR_INVALID_OBJECT",
+    "FR_WRITE_PROTECTED",
+    "FR_INVALID_DRIVE",
+    "FR_NOT_ENABLED",
+    "FR_NO_FILESYSTEM",
+    "FR_MKFS_ABORTED",
+    "FR_TIMEOUT",
+    "FR_LOCKED",
+    "FR_NOT_ENOUGH_CORE",
+    "FR_TOO_MANY_OPEN_FILES",
+    "FR_INVALID_PARAMETER"
+};
+
 extern UART_HandleTypeDef huart1;
 
 
@@ -56,6 +79,7 @@ void buf_clear(void){
 
 void mount_sd_card(){
 	fresult = f_mount(&fs, "",0);
+	//UART_Transmit_Messages_BlackBox(fresultStrings[fresult]);
 	if(fresult != FR_OK)
 	{
 		UART_Transmit_Messages_BlackBox("*               Error mounting the SD Card              *\r\n");
@@ -63,6 +87,31 @@ void mount_sd_card(){
 		UART_Transmit_Messages_BlackBox("*              SD Card mounted successfully!            *\r\n");
 	}
 }
+
+
+int mount_sd_card_plus(){
+    fresult = f_mount(&fs, "", 0);
+
+    if (fresult != FR_OK) {
+        UART_Transmit_Messages_BlackBox("* Error mounting the SD Card *\r\n");
+        return -1;
+    } else {
+        FIL test_file;
+        fresult = f_open(&test_file, "test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+        if (fresult != FR_OK) {
+            UART_Transmit_Messages_BlackBox("* SD Card not mounted. *\r\n");
+            return -1;
+        } else {
+            f_close(&test_file);
+            f_unlink("test.txt"); // Delete the test file
+            UART_Transmit_Messages_BlackBox("* SD Card mounted successfully! *\r\n");
+            return 0;
+        }
+    }
+}
+
+
+
 
 void check_free_space() {
     f_getfree("", &fre_clust, &pfs);

@@ -18,7 +18,7 @@
 
 #define PYRO_2_PIN GPIO_PIN_0  // Slot n. 8
 #define PYRO_2_PORT GPIOA
-#define PYRO_IGNITION_TIME 1000
+#define PYRO_IGNITION_TIME 4000
 
 extern UART_HandleTypeDef huart1;
 

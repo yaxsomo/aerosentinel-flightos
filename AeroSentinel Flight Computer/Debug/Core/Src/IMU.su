@@ -1,5 +1,5 @@
 ../Core/Src/IMU.c:54:6:UART_Transmit_Messages_IMU	16	static
 ../Core/Src/IMU.c:60:9:platform_read	48	static
 ../Core/Src/IMU.c:69:9:platform_write	48	static
-../Core/Src/IMU.c:79:9:IMU_Initialization	48	static
-../Core/Src/IMU.c:183:9:IMU_Data_Read	144	static
+../Core/Src/IMU.c:79:9:IMU_Initialization	152	static
+../Core/Src/IMU.c:189:9:IMU_Data_Read	144	static

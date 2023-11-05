@@ -36,7 +36,8 @@ enum MenuState {
     MENU_MAIN,
     MENU_INIT,
     MENU_SENSOR_READINGS,
-    MENU_LORA,
+    MENU_LORA_SEND,
+	MENU_LORA_RECEIVE,
     MENU_IGNITION,
     MENU_PARACHUTE,
     MENU_LAUNCH,
@@ -63,15 +64,24 @@ void handleUserInput(char command);
 void UART_Transmit_Logo();
 void printIntroTitle();
 void printOptions();
+
+void main_lora_packet_receive(uint8_t* dataPacket, uint8_t size);
+void main_e22_configurationMode(void);
+void main_e22_transceiverMode(void);
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+
 int32_t initialization_procedure();
 void sensors_readings();
 void UART_Transmit_String(const char* str);
 void menu(char command);
 void launch_procedure(int countdown_duration_ms);
+/*
 void lora_initialize_sender();
 void lora_initialize_receiver();
 void lora_send();
 void lora_receive();
+*/
 void count_down_sequence_fire_test(int countdown_duration_ms);
 uint32_t getNumberOfIterations();
 void scanSingleUARTDevice(UART_HandleTypeDef *huart);

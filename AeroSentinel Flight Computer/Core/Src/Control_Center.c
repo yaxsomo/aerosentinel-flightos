@@ -12,7 +12,8 @@
 #include "BlackBox.h"
 #include "pyro.h"
 #include "time.h"
-#include "e220.h"
+//#include "e220.h"
+#include "e22900t22d.h"
 
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
@@ -34,6 +35,7 @@ enum MenuState currentMenuState = MENU_MAIN;
 
 //LORA SECTION DECLARATION
 
+/*
 	// SENDER
 
 	uint8_t send_buffer[32]="Hello There!";
@@ -46,7 +48,7 @@ enum MenuState currentMenuState = MENU_MAIN;
 	int16_t result;
 	uint8_t all_reg_rx[8];
 	struct LoRa_Handler LoraRX={0};
-
+*/
 
 void UART_Transmit_String(const char* str)
 {
@@ -54,14 +56,7 @@ void UART_Transmit_String(const char* str)
 }
 
 
-// Function to read and transmit the ASCII art from a .ans file
 void UART_Transmit_Logo() {
-
-
-
-
-
-
     UART_Transmit_String("                                                                \r\n");
 	UART_Transmit_String("                                                                \r\n");
 	UART_Transmit_String("                            ,,								  \r\n");
@@ -141,10 +136,11 @@ void printMenu(enum MenuState state) {
         	UART_Transmit_String("\r\n");
             UART_Transmit_String("0 - Initialize Flight Computer\r\n");
             UART_Transmit_String("1 - Read All Sensors\r\n");
-            UART_Transmit_String("2 - LoRa Test (Sender/Receiver)\r\n");
-            UART_Transmit_String("3 - Execute Pyro Test (Ignition)\r\n");
-            UART_Transmit_String("4 - Execute Pyro Test (Parachute)\r\n");
-            UART_Transmit_String("5 - Launch Procedure\r\n");
+            UART_Transmit_String("2 - LoRa Test (Sender)\r\n");
+            UART_Transmit_String("3 - LoRa Test (Receiver)\r\n");
+            UART_Transmit_String("4 - Execute Pyro Test (Ignition)\r\n");
+            UART_Transmit_String("5 - Execute Pyro Test (Parachute)\r\n");
+            UART_Transmit_String("6 - Launch Procedure\r\n");
             UART_Transmit_String("\r\n");
             break;
         case MENU_INIT:
@@ -153,8 +149,11 @@ void printMenu(enum MenuState state) {
         case MENU_SENSOR_READINGS:
             UART_Transmit_String("Reading Sensors...\r\n");
             break;
-        case MENU_LORA:
-            UART_Transmit_String("Running LoRa Test...\r\n");
+        case MENU_LORA_SEND:
+            UART_Transmit_String("Running LoRa SENDING Test...\r\n");
+            break;
+        case MENU_LORA_RECEIVE:
+            UART_Transmit_String("Running LoRa RECEIVING Test...\r\n");
             break;
         case MENU_IGNITION:
             UART_Transmit_String("Starting Firing test (Ignition)...\r\n");
@@ -182,15 +181,18 @@ void handleUserInput(char command) {
             currentMenuState = MENU_SENSOR_READINGS;
             break;
         case '2':
-            currentMenuState = MENU_LORA;
+            currentMenuState = MENU_LORA_SEND;
             break;
         case '3':
-            currentMenuState = MENU_IGNITION;
+            currentMenuState = MENU_LORA_RECEIVE;
             break;
         case '4':
-            currentMenuState = MENU_PARACHUTE;
+            currentMenuState = MENU_IGNITION;
             break;
         case '5':
+            currentMenuState = MENU_PARACHUTE;
+            break;
+        case '6':
             currentMenuState = MENU_LAUNCH;
             break;
         default:
@@ -198,19 +200,6 @@ void handleUserInput(char command) {
             break;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -229,10 +218,86 @@ void printIntroTitle()
     check_free_space();
 
 
+
+
     //scanSingleUARTDevice(&huart1); // Checks for UART devices connected
 
 
 }
+
+void main_lora_packet_receive(uint8_t* dataPacket, uint8_t size)
+{
+	uint8_t loraPacket[MAX_DATA_PACKET_SIZE] = {0};
+	//Copy data to the main layer
+	memcpy(&loraPacket, dataPacket, size);
+	// TODO: implement main layer packet handling
+}
+
+/**
+ * @brief 	UART data transmission complete callback over DMA
+ *
+ * @param 	huart	:	Pointer to the UART handler
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	//Change the TX line state to ready
+	e22_lora_make_ready();
+}
+/**
+ * @brief 	UART data reception complete callback over DMA
+ *
+ * @param 	huart	:	Pointer to the UART handler
+ *
+ * @param 	Size	:	Packet size received over UART
+ */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	e22_lora_reception_complete(Size);
+}
+
+/**
+ * @brief 	LoRa module transceiver mode selection.  when this mode is active, the module configuration can't be modified.
+ *
+ *
+ */
+void main_e22_transceiverMode(void)
+{
+	//M0
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+	//M1
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+
+}
+/**
+ * @brief 	LoRa module config mode selection. when this mode is active, wireless communication is inactive.
+ *
+ */
+void main_e22_configurationMode(void)
+{
+	//M0
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+	//M1
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+}
+
+void lora_transmit(){
+
+	 const uint8_t packetSize = 4;
+
+	 const uint8_t receiverAddress = 0x09;
+
+	 const uint8_t ComChannel = 0x12;
+
+	 uint8_t packet[5] = "ping";
+
+	for(int i=0; i< 20; i++)
+	{
+
+		e22_lora_transnit(packet, packetSize, receiverAddress, ComChannel);
+
+	}
+}
+
 
 int32_t initialization_procedure(){
 
@@ -266,6 +331,11 @@ int32_t initialization_procedure(){
 	  HAL_Delay(100);
 
 
+	  e22_lora_init(&huart6, HAL_UART_Transmit_DMA, HAL_UARTEx_ReceiveToIdle_DMA,main_lora_packet_receive,main_e22_configurationMode,main_e22_transceiverMode);
+
+
+
+
 
 
 	  fc_initialization_state = imu_init_state + pressure_init_state + magnetometer_init_state;
@@ -289,19 +359,14 @@ void sensors_readings() {
     char buffer[200];
 
     // Format IMU data into the buffer
-    sprintf(buffer,"----------------------"
-    		"Roll=%.3f°, \r\n"
-    		"Pitch=%.3f° , \r\n"
-    		"Yaw=%.3f \r\n",imu_data.roll, imu_data.pitch, compass_data.heading);
+    sprintf(buffer,"Roll=%.3f° | Pitch=%.3f° | Yaw=%.3f \r\n",imu_data.roll, imu_data.pitch, compass_data.heading);
     UART_Transmit_String(buffer);
 
 	sprintf(buffer, "IMU Data: \n"
 		"Acceleration (X=%.3f g, Y=%.3f g, Z=%.3f g), \r\n"
-		"Angular Rate (X=%4.2f dps, Y=%4.2f dps, Z=%4.2f dps), \r\n"
-		"Roll=%.3f°, Pitch=%.3f°\r\n", // Note the '\r' to return to the beginning of the line
+		"Angular Rate (X=%4.2f dps, Y=%4.2f dps, Z=%4.2f dps), \r\n", // Note the '\r' to return to the beginning of the line
 		imu_data.acceleration_x, imu_data.acceleration_y, imu_data.acceleration_z,
-		imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z,
-		imu_data.roll, imu_data.pitch);
+		imu_data.angular_rate_x, imu_data.angular_rate_y, imu_data.angular_rate_z);
     UART_Transmit_String(buffer);
     append_data_to_file("data.txt", buffer);
 
@@ -317,9 +382,9 @@ void sensors_readings() {
     append_data_to_file("data.txt", buffer);
 
     // Concatenate compass data to buffer
-    sprintf(buffer, "HEADING (YAW): %.1f\r\n", compass_data.heading);
-    UART_Transmit_String(buffer);
-    append_data_to_file("data.txt", buffer);
+    //sprintf(buffer, "HEADING (YAW): %.1f\r\n", compass_data.heading);
+    //UART_Transmit_String(buffer);
+    //append_data_to_file("data.txt", buffer);
 
     UART_Transmit_String("------------------------------------------------------ \r\n");
     // Append the separator to the file
@@ -413,8 +478,11 @@ void menu(char command) {
                 }
             }
             break;
-        case MENU_LORA:
-            // TODO: Implement LoRa Test
+        case MENU_LORA_SEND:
+            lora_transmit();
+            break;
+        case MENU_LORA_RECEIVE:
+            e22_lora_manager();
             break;
         case MENU_IGNITION:
             if (currentMenuState == MENU_IGNITION) {
@@ -611,133 +679,4 @@ void scanSingleUARTDevice(UART_HandleTypeDef *huart)
   }
 
   UART_Transmit_String("UART scanning complete.\r\n");
-}
-
-
-void lora_initialize_sender(){
- //SENDER
-
-		int8_t packet_size= 0,data_rate= 0,broadcast_address= 0,channel= 0,normal_mode = 0;
-		char sender_check[100];
-
-		UART_Transmit_String("Sender : Configuring ports \r\n");
-		LoraTX.uart_handler=&huart6;
-		LoraTX.M_GPIO_PORT=GPIOA;
-		LoraTX.AUX_GPIO_PORT=GPIOB;
-		LoraTX.M0_PIN=GPIO_PIN_15; // PWM 1
-		LoraTX.M1_PIN=GPIO_PIN_1; // PWM 2
-		LoraTX.MAUX_PIN=GPIO_PIN_4; // PWM 3
-
-		UART_Transmit_String("Sender : Entering Configuration Mode \r\n");
-
-		while (E220_enter_config_mode(&LoraTX)!=1);
-
-
-		//E220_reset(&LoraTX);
-
-		packet_size= E220_set_packetsize_32k(&LoraTX);
-		sprintf(sender_check, "Packet Size Config : %d \r\n", packet_size);
-		UART_Transmit_String(sender_check);
-
-		data_rate= E220_set_datarate_62k(&LoraTX);
-		sprintf(sender_check, "Data Rate Config : %d \r\n", data_rate);
-		UART_Transmit_String(sender_check);
-
-		broadcast_address= E220_set_broadcast_address(&LoraTX);
-		sprintf(sender_check, "Broadcast Address Config : %d \r\n", broadcast_address);
-		UART_Transmit_String(sender_check);
-
-		channel= E220_set_channel(&LoraTX, 4);
-		sprintf(sender_check, "Channel Config : %d \r\n", channel);
-		UART_Transmit_String(sender_check);
-
-		result=E220_read_register_all(&LoraTX,all_reg_tx);
-
-		normal_mode= E220_enter_normal_mode(&LoraTX);
-		sprintf(sender_check, "Normal Mode Switch : %d \r\n", normal_mode);
-		UART_Transmit_String(sender_check);
-
-}
-
-void lora_initialize_receiver(){
-
-	int8_t packet_size= 0,data_rate= 0,broadcast_address= 0,channel= 0,normal_mode = 0;
-	char sender_check[100];
-
-
-  //RECEIVER
-	UART_Transmit_String("Receiver : Configuring ports \r\n");
-	  LoraRX.uart_handler=&huart6;
-	  LoraRX.M_GPIO_PORT=GPIOA;
-	  LoraRX.AUX_GPIO_PORT=GPIOB;
-	  LoraRX.M0_PIN=GPIO_PIN_15;  // PWM 1
-	  LoraRX.M1_PIN=GPIO_PIN_1; // PWM 2
-	  LoraRX.MAUX_PIN=GPIO_PIN_4; // PWM 3
-
-
-
-	  UART_Transmit_String("Receiver : Entering Configuration Mode \r\n");
-	   while (E220_enter_config_mode(&LoraRX)!=1);
-
-	   //E220_reset(&LoraRX);
-
-	   packet_size = E220_set_packetsize_32k(&LoraRX);
-		sprintf(sender_check, "Packet Size Config : %d \r\n", packet_size);
-		UART_Transmit_String(sender_check);
-
-		data_rate= E220_set_datarate_62k(&LoraRX);
-		sprintf(sender_check, "Data Rate Config : %d \r\n", data_rate);
-		UART_Transmit_String(sender_check);
-
-		broadcast_address= E220_set_broadcast_address(&LoraRX);
-		sprintf(sender_check, "Broadcast Address Config : %d \r\n", broadcast_address);
-		UART_Transmit_String(sender_check);
-
-
-		channel= E220_set_channel(&LoraRX, 4);
-		sprintf(sender_check, "Channel Config : %d \r\n", channel);
-		UART_Transmit_String(sender_check);
-
-
-	   result=E220_read_register_all(&LoraRX,all_reg_rx);
-
-	   normal_mode= E220_enter_normal_mode(&LoraRX);
-		sprintf(sender_check, "Normal Mode Switch : %d \r\n", normal_mode);
-		UART_Transmit_String(sender_check);
-
-
-
-}
-
-
-void lora_send(){
-
-
-	  UART_Transmit_String("Sending..");
-
-	  E220_transmit_payload(&LoraTX,send_buffer,32);
-
-
-       //sprintf(transmission_buffer, "%p\r\n", send_buffer);
-       UART_Transmit_String((char*)send_buffer);
-       UART_Transmit_String("\r\n");
-
-       HAL_Delay(1000);
-
-}
-
-void lora_receive(){
-
-
-	  UART_Transmit_String("Receiving..");
-
-	  E220_receive_payload(&LoraRX,receive_buffer,32);
-
-
-     //sprintf(reception_buffer, "%p\r\n", receive_buffer);
-     UART_Transmit_String((char*)receive_buffer);
-     UART_Transmit_String("\r\n");
-
-     HAL_Delay(500);
-
 }

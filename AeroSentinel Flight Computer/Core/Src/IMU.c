@@ -90,8 +90,14 @@ int32_t IMU_Initialization(){
 	whoamI = 0;
 	lsm6ds3tr_c_device_id_get(&device, &whoamI);
 
+
+
 	if ( whoamI != LSM6DS3TR_C_ID ) {
-		UART_Transmit_Messages_IMU("ERROR: IMU MALFUNCTION");
+		char temp_buf[100];
+		// Use sprintf to format the device ID into the buffer
+		sprintf(temp_buf, "Device ID: 0x%02X | ", whoamI);
+		UART_Transmit_Messages_IMU("ERROR: IMU MALFUNCTION | ");
+		UART_Transmit_Messages_IMU(temp_buf);
 		return -1;
 	}
 

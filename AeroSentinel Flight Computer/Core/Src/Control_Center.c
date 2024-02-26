@@ -213,6 +213,7 @@ void printIntroTitle()
     UART_Transmit_String("*********************************************************\r\n");
     UART_Transmit_String("*               AEROSENTINEL Flight OS                  *\r\n");
     UART_Transmit_String("*    A versatile flight control system for your rocket  *\r\n");
+    UART_Transmit_String("                Made by Yassine DEHHANI                  \r\n");
     UART_Transmit_String("*********************************************************\r\n");
     mount_sd_card();
     check_free_space();

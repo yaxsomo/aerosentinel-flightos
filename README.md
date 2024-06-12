@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/yaxsomo/Aerosentinel-Mach-1/assets/71334330/de24ace0-c8ac-459d-885e-7f99cd05fdc7" alt="aerosentinel logo">
+  <img src="https://github.com/yaxsomo/aerosentinel-mach-1/assets/71334330/4a7d5f48-8e5b-4545-8c44-3bc80b7cae8b" alt="aerosentinel logo">
 </p>
 
 #

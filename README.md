@@ -4,7 +4,7 @@
 
 #
 
-Welcome to Aerosentinel Mach 10 Flight Controller firmware repository. This firmware is developed and configured using STM32CubeIDE and written in C++.
+Welcome to Aerosentinel Mach 1 Flight Controller firmware repository. This firmware is developed and configured using STM32CubeIDE and written in C++.
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -18,7 +18,7 @@ Welcome to Aerosentinel Mach 10 Flight Controller firmware repository. This firm
 7. [License](#license)
 
 ## Introduction
-This firmware is designed to provide precise control, navigation, and telemetry capabilities for rocketry applications using the Aerosentinel Mach 10 Flight Controller. It implements advanced algorithms and features to ensure optimal performance, safety, and reliability during launch, ascent, and recovery phases.
+This firmware is designed to provide precise control, navigation, and telemetry capabilities for rocketry applications using the Aerosentinel Mach 1 Flight Controller. It implements advanced algorithms and features to ensure optimal performance, safety, and reliability during launch, ascent, and recovery phases.
 
 ## Getting Started
 
